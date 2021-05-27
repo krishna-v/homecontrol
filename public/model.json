@@ -1,0 +1,101 @@
+{
+	"rooms":{
+		"1":{
+			"id":"1",
+			"name":"Living Room",
+			"ctrls":{
+				"1":{"name":"CENTER","type":"DIMMER","protocol":"none","host":"192.168.5.128"},
+				"2":{"name":"CEILING","type":"DIMMER","protocol":"none","host":"192.168.5.128"},
+				"3":{"name":"Seating Area","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"Center","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"5":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"6":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"7":{"name":"LIVING","type":"GROUP","protocol":"none","host":"192.168.5.128"},
+				"8":{"name":"Terrace","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"9":{"name":"Japanese Lamp","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.7"},
+				"10":{"name":"Tall Lamp 1","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.14"},
+				"11":{"name":"Tall Lamp 2","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.15"}
+			}
+		},
+		"2":{
+			"id":"2",
+			"name":"Dining Room",
+			"ctrls":{
+				"1":{"name":"LIGHT_1","type":"DIMMER","protocol":"none","host":"192.168.5.128"},
+				"2":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"3":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"4":{"name":"DINING","type":"GROUP","protocol":"none","host":"192.168.5.128"},
+				"5":{"name":"Dining Area","type":"LIGHT","protocol":"knx","host":"192.168.5.128"}
+			}
+		},
+		"3":{
+			"id":"3",
+			"name":"Master Bedroom",
+			"ctrls":{
+				"1":{"name":"LIGHT_1","type":"DIMMER","protocol":"none","host":"192.168.5.128"},
+				"2":{"name":"Tubelight","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"3":{"name":"Desk Overhead","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"Entryway","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"5":{"name":"Terrace","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"6":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"7":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"8":{"name":"Water Heater","type":"GEYSER","protocol":"knx","host":"192.168.5.128"},
+				"9":{"name":"Dress","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"10":{"name":"Foyer","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.5"},
+				"11":{"name":"Preeti Bed","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.10"},
+				"12":{"name":"Krishna Bed","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.11"}
+			}
+		},
+		"4":{
+			"id":"4",
+			"name":"Second Bedroom",
+			"ctrls":{
+				"1":{"name":"Over Bed","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"2":{"name":"Over Window","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"3":{"name":"Over TV","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"5":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"6":{"name":"Water Heater","type":"GEYSER","protocol":"knx","host":"192.168.5.128"}
+			}
+		},
+		"5":{
+			"id":"5",
+			"name":"Third Bedroom",
+			"ctrls":{
+				"1":{"name":"Over Computer Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"2":{"name":"Window Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"3":{"name":"Over Cupboard","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"Dressing Area","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"5":{"name":"Over Bed","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"6":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"7":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"8":{"name":"Water Heater","type":"GEYSER","protocol":"knx","host":"192.168.5.128"},
+				"9":{"name":"Paati Bed","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.12"},
+				"10":{"name":"Leya Bed","type":"SMARTLIGHT","protocol":"tasmota","host":"192.168.5.13"}
+			}
+		},
+		"6":{
+			"id":"6",
+			"name":"Guest Bedroom",
+			"ctrls":{
+				"1":{"name":"Over Bed Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"2":{"name":"Window Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"3":{"name":"Over TV Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"Dress Area","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"5":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"},
+				"6":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"7":{"name":"Water Heater","type":"GEYSER","protocol":"knx","host":"192.168.5.128"}
+			}
+		},
+		"7":{
+			"id":"7",
+			"name":"Kitchen",
+			"ctrls":{
+				"1":{"name":"Side Light","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"2":{"name":"Over Window","type":"LIGHT","protocol":"knx","host":"192.168.5.128"},
+				"4":{"name":"Fan","type":"FAN","protocol":"knx","host":"192.168.5.128"},
+				"5":{"name":"AC","type":"AC","protocol":"none","host":"192.168.5.128"}
+			}
+		}
+	}
+}

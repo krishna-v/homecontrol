@@ -1,0 +1,43 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+<title>Home Control</title>
+<link rel="stylesheet" type="text/css" href="/controlflow.css" />
+<script src="/controlfuncs.js" type="text/JavaScript"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+</head>
+<body>
+	<div id="iconbox">
+		<div id="homebox" class="icon">
+			<img id="logo" class="iconimg" src="/HomeControl.svg">
+		</div>
+		<div id="menubox" class="icon">
+			<img id="menuimg" class="iconimg" src="/lightning.svg">
+		</div>
+		<div id="scenebox" class="icon">
+			<img id="sceneimg" class="iconimg" src="/magic-wand.svg">
+		</div>
+	</div>
+	<div id="contentbox">
+		<div id="titlebox">
+			<h1 id="pagetitle">Home Control</h1>
+		</div>
+		<div id="appwrapper">
+			<div id="home" class="container" state="hidden" name="Home Control"> </div>
+			<div id="activectrls" class="container" state="hidden" name="Currently Active"> </div>
+			<div id="scene" class="container" state="hidden" name="Scene Manager"> </div>
+		</div>
+	</div>
+	<div id="ctrl-popup" class="complex-ctrl" state="hidden" light-name="none">
+		<div class="popup-header">
+			<div><h1 id="popup-title">Advanced Control</h1></div>
+			<div class="icon" onclick="closePopup()">
+				<img id="exitbtn" class="iconimg" src="Red_X.svg">
+			</div>
+		</div>
+		<div class="popup-content" id=popupcontent></div>
+	</div>
+</body>
+</html>

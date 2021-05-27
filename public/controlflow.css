@@ -1,0 +1,193 @@
+body {
+
+	background: repeating-radial-gradient(closest-side at 25px 35px, #333 15%, #000 40%);
+	background-size:60px 60px;
+	background-color: black;
+	font-family: Arial, Helvetica, sans-serif;
+	color: white;
+	display: flex; flex-direction: row; justify-content: stretch;
+}
+#iconbox { width: 15%; height: 100vh; display: flex; flex-direction: column; 
+	justify-content: space-around; align-items: center; }
+.icon { width: 100%; }
+.iconimg { object-fit: contain; }
+#contentbox { width: 85%; height: 100%; display: flex; flex-direction: column; 
+	justify-content: center; align-items: center; }
+#titlebox { width: 100%; margin-top: 2vh; text-align: center;
+	display: flex; flex-direction: column; align-items: center; }
+h1 { font-size: 3em; text-align: center; }
+.container { margin: auto; text-align: center;
+	display: flex; flex-direction: row; flex-wrap: wrap;
+	justify-content: space-between; }
+.control, .roombox { margin: auto; padding: 3vh; }
+.control[type="AC"], .control[type="DIMMER"], .control[type="GROUP"] {
+	display: none;
+}
+.container[state="hidden"], .container[state="background"] { display: none; }
+button {
+	color: white;
+	min-width: 150px;
+	font-size: 4vw;
+	padding: 2vw;
+	border-radius: 4vw;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+button[state="on"] { color: black; pointer-events: auto; }
+button[state="off"] { color: white; background-color: gray; pointer-events: auto; }
+button[state="offline"] { color: dimgray; background-color: gray; pointer-events: none; }
+button[pending="true"] { opacity: 0.8; }
+.light[state="on"] { background-color: yellow; }
+.fan[state="on"] { background-color: cyan; }
+.geyser[state="on"] { background-color: fuchsia; }
+.geyser[state="on"][ontime="long"] { background-color: red; }
+.geyser[state="on"][ontime="long"] { background-color: red; }
+.smartlight[state="on"] { background-color: orange; }
+.roomlink { background-color: purple; }
+#activectrls .control[childstate="off"] { display: none }
+
+/*-------------------- Popup Stuff ----------------------------------*/
+#ctrl-popup {
+	display: block;
+	position: fixed;
+	width: 90%;
+	top: 15%;
+	left: 5%;
+	background: repeating-radial-gradient(closest-side at 25px 35px, #333 5%, #304 40%);
+	background-size:60px 60px;
+	border: 5px solid #919191;
+	border-radius: 25px;
+	z-index: 9;
+	padding-bottom: 7vh;
+}
+#ctrl-popup[state="hidden"] { display: none; }
+
+.popup-header { width: 100%; display: inline-grid; grid-template-columns: 92% 8%; }
+.popup-infobox { width: 100%; display: flex; justify-content: center; padding: 20px; font-size: 3vw; }
+
+.smartlight-topbox {
+	box-sizing: border-box; width: 100%;
+	display: inline-grid; grid-template-columns: 25% 45% 30%;
+	/* display: flex; flex-direction: row; justify-content: center; */
+	padding: 20px; font-size: 3vw;
+}
+
+.sliderbox {
+	box-sizing: border-box; width: 100%;
+	display: inline-grid; grid-template-columns: 25% 60% 15%; justify-content: center;
+	/* display: flex; flex-direction: row; justify-content: center; */
+	padding: 20px; font-size: 3vw;
+}
+.sliderbox[state="hidden"] { display: none }
+
+/*----------------------------- Sliders ---------------------------------------*/
+.popup-label {
+	width:100%;
+	display: flex;
+	align-items: center;
+	justify-content: left;
+}
+
+.slider-value, .flexwrap, .slider-wrap {
+	width:100%;
+	display: flex;
+	align-items: center;
+	justify-content:center;
+}
+
+.range {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 1px;
+	margin-top: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+.range::-moz-range-track {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 1px;
+	cursor: pointer;
+	animate: 0.2s;
+	padding: 0px;
+	background: #000000;
+	border-radius: 0px;
+	border: 0px;
+}
+
+.range::-moz-range-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 2vw;
+	height: 4.5vw;
+	background: #0000c0;
+	border-radius: 4px;
+}
+
+.range::-webkit-slider-runnable-track {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 1px;
+	cursor: pointer;
+	animate: 0.2s;
+	padding: 0px;
+	background: #000000;
+	border-radius: 0px;
+	border: 0px;
+}
+
+.range::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 2vw;
+	height: 4.5vw;
+	background: #0000c0;
+	border-radius: 4px;
+	margin-top: -2.25vw;
+}
+
+#ctemp-slider { background-image:linear-gradient(to right, #fff, #ff0); }
+#color-slider { background-image:linear-gradient(to right, #800,#f00 5%,#ff0 20%,#0f0 35%,#0ff 50%,#00f 65%,#f0f 80%,#f00 95%,#800); }
+#lum-slider { background-image:linear-gradient(to right, #000, #fff); }
+#red-slider { background-image:linear-gradient(to right, #000, #f00); }
+#green-slider { background-image:linear-gradient(to right, #000, #0f0); }
+#blue-slider { background-image:linear-gradient(to right, #000, #00f); }
+/*------------------------------------------------------------------------------*/
+
+.switch { position: relative; display: inline-block; width: 30vw; height: 5vw; margin-left: 1vw;}
+.switch input {display: none; }
+.toggle { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+	-webkit-transition: .4s; transition: .4s; border-radius: 5vw; }
+.toggle:before { position: absolute; content: ""; height: 4.5vw; width: 4.5vw; left: .25vw; bottom: .25vw;
+	background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; }
+.toggle:after { display: block; position: absolute; transform: translate(-50%,-50%); top: 50%; left: 50%;
+	font-size: 2.5vw; }
+
+input:focus + .toggle { box-shadow: 0 0 1px #2196F3; }
+input:checked + .toggle:before { -webkit-transform: translateX(25vw); -ms-transform: translateX(25vw);
+	transform: translateX(25vw); }
+
+.power { background-color: #cacaca; }
+.power:after { color: white; content:'OFF'; }
+input:checked + .power { background-color: #2ab934; }
+input:checked + .power:after {  content:'ON'; }
+
+.opmode { background-image:linear-gradient(to right, #800,#f00 5%,#ff0 20%,#0f0 35%,#0ff 50%,#00f 65%,#f0f 80%,#f00 95%,#800); }
+.opmode:after { color: black; content:'COLOR'; }
+input:checked + .opmode { background-image:linear-gradient(to right, #fff, #ff0); }
+input:checked + .opmode:after { content: 'Warm/White'; }
+
+#apply { background-color: green; float: right; font-size: 3vw; padding: 1vw; }
