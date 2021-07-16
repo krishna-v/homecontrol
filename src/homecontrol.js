@@ -90,21 +90,32 @@ function initControlRead() {
 	}
 }
 
-function hueSetup(hbe, m, huemap) {
-	for(let room in m.rooms) {
-		for(let ctrl in m.rooms[room].ctrls) {
-			const type = m.rooms[room].ctrls[ctrl].type;
+function hueSetup(hbe, huemap) {
+    for(let room_id in model.rooms) {
+        for(let ctrl_id in model.room(room_id).ctrls) {
+            const ctrl = model.control(room_id, ctrl_id);
+            const type = ctrl.type;
             if (!["LIGHT", "FAN", "GEYSER", "SMARTLIGHT"].includes(type)) continue;
             const lightspec = {};
-            lightspec.name = `${m.rooms[room].name} ${m.rooms[room].ctrls[ctrl].name}`;
-            lightspec.model = (type === "SMARTLIGHT") ? "LCT016" : "LOM001";
-            lightspec.override = { uniqueid: `00:17:88:01:${room.padStart(2,'0')}:${ctrl.padStart(2,'0')}:01:01-0b` }
-			// TODO: Fix so that hueid can be non-sequential and set in the model.
-            const hueid = hbe.addDevice(lightspec);
-			m.rooms[room].ctrls[ctrl].hueid = hueid;
-            huemap[hueid] = { "room": room, "ctrl": ctrl };
-		}
-	}
+            lightspec.name = ctrl.fullname;
+            if(ctrl.model) lightspec.model = ctrl.model;
+            else switch(type) {
+                case "SMARTLIGHT":
+                    lightspec.model = "LCT016";
+                    break;
+                case "LIGHT":
+                    lightspec.model = "HBL001";
+                    break;
+                default:
+                    lightspec.model = "LOM001";
+                    break;
+            }
+            lightspec.override = { uniqueid: `00:17:88:01:${room_id.padStart(2,'0')}:${ctrl_id.padStart(2,'0')}:01:01-0b` };
+            lightspec.hueID = (room_id * 100) + (ctrl_id * 1);
+            ctrl.hueid = hbe.addDevice(lightspec);
+            huemap[ctrl.hueid] = { "room": room_id, "ctrl": ctrl_id };
+        }
+    }
 }
 
 function servedynamic(req, res) {
@@ -170,7 +181,7 @@ function hueCallback(hbe, id, light, state) {
 }
 
 const hbe = new HueBridgeEmulator({ port: hueport, debug: true, upnp: false, devicedb: devdb, callback: hueCallback });
-hueSetup(hbe, model, hueMap);
+hueSetup(hbe, hueMap);
 hbe.start();
 initControlRead();
 
