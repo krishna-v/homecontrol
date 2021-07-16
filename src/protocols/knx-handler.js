@@ -3,38 +3,39 @@ const util = require('hcutils');
 
 class KNXHandler {
 
-    relayCmd(model, room_id, ctrl_id, key, value) {
-        const ctrl = model.control(room_id, ctrl_id);
-        util.logMessage("INFO", "KNXHandler::relayCmd(): Turning " + (value === "1" ? "on " : "off ") +
-            model.room(room_id).name + " " + ctrl.name);
+    relayCmd(ctrl, key, value) {
+        util.logMessage("INFO", `KNXHandler::relayCmd(): Turning ${(value === "1")?"on":"off"} ${ctrl.fullname}`);
         const host = ctrl.host;	
-        const cmdstr = '/cgi-bin/writeVal.cgi?KNX.g%5B' + room_id + '%5D.f%5B' + ctrl_id + '%5D.v%5B1%5D+' + value;
-        util.doRemoteCmd(host, 80, cmdstr).catch((e) => { util.logMessage("WARN", 'KNXHandler::relayCmd(): ' + e.message); });
+        const cmdstr = `/cgi-bin/writeVal.cgi?KNX.g%5B${ctrl.room_id}%5D.f%5B${ctrl.id}%5D.v%5B1%5D+${value}`;
+        util.doRemoteCmd(host, 80, cmdstr).catch((e) => {
+            util.logMessage("WARN", `KNXHandler::relayCmd(): ${e.message} for ${ctrl.fullname}`);
+        });
     }
 
-    loadState(model, room_id, ctrl_id) {
-        const ctrl = model.control(room_id, ctrl_id);
-        const host = ctrl.host;	
-        const arg = '/cgi-bin/readVal.cgi?KNX.g%5B' + room_id + '%5D.f%5B' + ctrl_id + '%5D.v%5B2%5D';
-        util.doRemoteCmd(host, 80, arg).then((data) => {;
+    registerControl(ctrl, callback) {
+        setInterval(this._loadState, 5000, ctrl, callback);
+    }
+
+    _loadState(ctrl, callback) {
+        const arg = `/cgi-bin/readVal.cgi?KNX.g%5B${ctrl.room_id}%5D.f%5B${ctrl.id}%5D.v%5B2%5D`;
+        util.doRemoteCmd(ctrl.host, 80, arg).then((data) => {;
             try {
                 if(data !== "0" && data !== "1") {
-                    util.logMessage("WARN", "loadKNXState: received data for room " + 
-                        room_id + ", ctrl " + ctrl_id + " : " + data);
+                    util.logMessage("WARN", `KNXHandler::loadState(): received data for ${ctrl.fullname}: ${data}`);
                 }
             } catch(e) {
-                util.logMessage("WARN", 'loadKNXState: ' + e.message + ' for ' + room_id + "." + ctrl_id);
+                util.logMessage("WARN", `KNXHandler::loadState(): ${e.message} for ${ctrl.fullname}`);
             }
             const state = (data === "1") ? "on" : "off";
-            return model.setControlState(room_id, ctrl_id, { "state": state });
+            return callback(ctrl, { "state": state });
         }, (e) => { 
             if(e.code === 'EHOSTUNREACH') {
                 // host offline.
                 if(ctrl.state !== "offline") {
-                    util.logMessage("WARN", 'loadKNXState: ' + e.message + ' for ' + room_id + "." + ctrl_id);
-                    return model.setControlState(room_id, ctrl_id, { "state": "offline" });
+                    util.logMessage("WARN", `KNXHandler::loadState(): ${e.message} for ${ctrl.fullname}`);
+                    return callback(ctrl, { "state": "offline" });
                 }
-            } else util.logMessage("WARN", 'loadKNXState: ' + e.message + ' for ' + room_id + "." + ctrl_id);
+            } else util.logMessage("WARN", `KNXHandler::loadState(): ${e.message} for ${ctrl.fullname}`);
         });
         return false;
     }

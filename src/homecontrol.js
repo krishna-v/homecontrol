@@ -30,21 +30,22 @@ function servestatic(req,res) {
 }
 
 function relayCmd(room_id, ctrl_id, state_info) {
-    const protocol = model.control(room_id, ctrl_id).protocol;
+    const ctrl = model.control(room_id, ctrl_id);
+    const handler = protocols[ctrl.protocol];
+	if(!handler) return;
     if(typeof state_info === "string") {
         const parts = state_info.split('=');
-		protocols[protocol].relayCmd(model, room_id, ctrl_id, parts[0], parts[1]);
+		handler.relayCmd(ctrl, parts[0], parts[1]);
     } else {
         for(let key in state_info)
-			protocols[protocol].relayCmd(model, room_id, ctrl_id, key, state_info[key]);
+			handler.relayCmd(ctrl, key, state_info[key]);
     }
 }
 
-function updateState(model, room_id, ctrl_id) {
-	const ctrl = model.control(room_id, ctrl_id);
-	if(!protocols[ctrl.protocol].loadState(model, room_id, ctrl_id)) return;
+function updateState(ctrl, state_info) {
+	if(!model.setControlState(ctrl, state_info)) return;
 	if(ctrl.state === "offline") {
-		hbe.setState(model.control(room, ctrl).hueid, { reachable: false });
+		hbe.setState(ctrl.hueid, { reachable: false });
 		return;
 	}
 	const hueState = {};
@@ -69,9 +70,10 @@ function updateState(model, room_id, ctrl_id) {
 function initControlRead() {
 	for(let room_id in model.rooms) {
 		for(let ctrl_id in model.room(room_id).ctrls) {
-			const protocol = model.control(room_id, ctrl_id).protocol;
+			const ctrl = model.control(room_id, ctrl_id);
+			const protocol = ctrl.protocol;
 			if(protocol === undefined || protocol === 'none') {
-				util.logMessage("INFO", `skipping ${room_id}:${ctrl_id} with protocol ${protocol}`);
+				util.logMessage("INFO", `skipping ${ctrl.fullname} with protocol ${protocol}`);
 				continue;
 			}
 			if(protocols[protocol] === undefined) {
@@ -82,7 +84,8 @@ function initControlRead() {
 					continue;
 				}
 			}
-			setInterval(updateState, 5000, model, room_id, ctrl_id);
+			// setInterval(updateState, 5000, model, room_id, ctrl_id);
+			protocols[protocol].registerControl(ctrl, updateState)
 		}
 	}
 }

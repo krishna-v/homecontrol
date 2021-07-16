@@ -9,8 +9,16 @@ class HouseModel {
         this.lastChanged = Date.now();
         try {
             const model = JSON.parse(fs.readFileSync(modelFile));
-            if (model !== null) {
-                this.rooms = model.rooms;
+            if (!model) return;
+            this.rooms = model.rooms;
+            for(let room_id in this.rooms) {
+                const room = this.rooms[room_id];
+                for(let ctrl_id in room.ctrls) {
+                    const ctrl = room.ctrls[ctrl_id];
+                    ctrl.id = ctrl_id;
+                    ctrl.room_id = room_id;
+                    ctrl.fullname = `${room.name} ${ctrl.name}`;
+                }
             }
         } catch(e) {
             util.logMessage("FATAL", `Error loading model: ${modelFile} => ${e.message}`);
@@ -25,9 +33,8 @@ class HouseModel {
         return this.rooms[room_id].ctrls[ctrl_id];
     }
 
-    setControlState(room_id, ctrl_id, state_info) {
+    setControlState(ctrl, state_info) {
         const now = Date.now();
-        const ctrl = this.control(room_id, ctrl_id);
         let updated = false;
 
         this.lastChanged = now;
@@ -35,8 +42,7 @@ class HouseModel {
             let val = "*none*";
             if(ctrl[key] !== undefined && ctrl[key] != null) val = ctrl[key];
             if(state_info[key] !== val) {
-                util.logMessage("INFO", "setControlState: " +
-                    this.rooms[room_id].name + " " + ctrl.name +
+                util.logMessage("INFO", "setControlState: " + ctrl.fullname +
                     " > " + key + " changed from " + val + " to " + state_info[key]);
                 ctrl[key] = state_info[key];
                 ctrl.lastChanged = now;
