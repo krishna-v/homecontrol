@@ -3,12 +3,17 @@ const util = require('hcutils');
 // const HouseModel = require("housemodel");
 
 class TasmotaHandler {
+    constructor(config) {
+        this.pollInterval = 5000;
+        this.controlmap = {};
+    }
 
     relayCmd(ctrl, key, value) {
         let cmdstr = '';
         if(key === 'value' || key === 'state') {
             util.logMessage("INFO", `TasmotaHandler::relayCmd(): Turning ${(value === "1")?"on":"off"} $ctrl.fullname}`);
-            cmdstr = '/cm?cmnd=POWER0%20' + value;
+            // cmdstr = '/cm?cmnd=POWER0%20' + value;
+            cmdstr = ctrl.channel ? `/cm?cmnd=POWER${ctrl.channel}%20${value}` : `/cm?cmnd=POWER0%20${value}`;
         } else if(key === 'color') {
             util.logMessage("INFO", `TasmotaHandler::relayCmd(): Setting ${ctrl.fullname} color to ${value}`);
             cmdstr = '/cm?cmnd=Color%20' + value;
@@ -18,6 +23,9 @@ class TasmotaHandler {
         } else if(key === 'ct') {
             util.logMessage("INFO", `Setting ${ctrl.fullname} CT to ${value[0]},${value[1]}`);
             cmdstr = `/cm?cmnd=Backlog%20White%20${value[0]}%20CT%20${value[1]}`;
+        } else if(key === 'level') {
+            util.logMessage("INFO", `TasmotaHandler::relayCmd(): Setting ${ctrl.fullname} level to ${value}`);
+            cmdstr = ctrl.channel ? `/cm?cmnd=Channel${ctrl.channel}%20${value}` : `/cm?cmnd=Dimmer%20${value}`;
         } else {
             util.logMessage("WARN", `TasmotaHandler::relayCmd(): Dropped unknown Command ${cmd} to ${ctrl.fullname}`);
             return;
@@ -27,35 +35,58 @@ class TasmotaHandler {
         });
     }
 
-    // TODO: Handle compound controls.
     registerControl(ctrl, callback) {
-        setInterval(this._loadState, 5000, ctrl, callback);
+        const host = ctrl.host;
+        if(!host) return;
+        if(ctrlmap[host]) {
+            ctrlmap[host].push({ ctrl: ctrl, callback: callback });
+        } else {
+            ctrlmap[host] = [ { ctrl: ctrl, callback: callback } ];
+            setInterval(this._loadState, this.pollInterval, host);
+        }
     }
 
-    _loadState(ctrl, callback) {
-        const host = ctrl.host;
-        const statemap = {};
+    _loadState(host) {
         util.doRemoteCmd(host, 80, '/cm?cmnd=Status%2011').then((data) => {
             try {
                 const info = JSON.parse(data);
-                const state = info.StatusSTS.POWER.toLowerCase();
-                statemap["state"] = state;
-                if(info.StatusSTS.Color !== undefined) statemap["color"] = info.StatusSTS.Color;
-                if(info.StatusSTS.HSBColor !== undefined) statemap["hsb"] = info.StatusSTS.HSBColor;
-                if(info.StatusSTS.White !== undefined) statemap["white"] = info.StatusSTS.White;
-                if(info.StatusSTS.CT !== undefined) statemap["ct"] = info.StatusSTS.CT;
-                return callback(ctrl, statemap);
+                for(let tuple in ctrlmap[host]) {
+                    const statemap = {};
+                    const channel = tuple.ctrl.channel;
+                    const state = channel ? info.StatusSTS[`POWER${channel}`] : info.StatusSTS.POWER;
+                    if (!state) continue;
+                    statemap["state"] = state.toLowerCase();
+                    let ctrltype = tuple.ctrl.subtype;
+                    if(!ctrltype && tuple.ctrl.type === "SMARTLIGHT") ctrltype = "RGBWW";
+                    switch(ctrltype) {
+                        case "RGBWW":
+                        case "RGB":
+                            if(info.StatusSTS.Color !== undefined) statemap["color"] = info.StatusSTS.Color;
+                            if(info.StatusSTS.HSBColor !== undefined) statemap["hsb"] = info.StatusSTS.HSBColor;
+                            if(info.StatusSTS.White !== undefined) statemap["white"] = info.StatusSTS.White;
+                            if(info.StatusSTS.CT !== undefined) statemap["ct"] = info.StatusSTS.CT;
+                            break;
+                        case "DIMMER":
+                            statemap["level"] = channel ? info.StatusSTS[`Channel${channel}`] : info.StatusSTS.Dimmer;
+                            break;
+                        default:
+                            break;
+                    }
+                    tuple.callback(tuple.ctrl, statemap);
+                }
             } catch(e) {
-                util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for ${ctrl.fullname} (${host})`);
+                util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for (${host})`);
             }
         }, (e) => { 
             if(e.code === 'EHOSTUNREACH') {
                 // host offline.
-                if(ctrl.state !== "offline") {
-                    util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for ${ctrl.fullname} (${host})`);
-                    return callback(ctrl, { "state": "offline" });
+                for(let tuple in ctrlmap[host]) {
+                    if(tuple.ctrl.state !== "offline") {
+                        util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for ${tuple.ctrl.fullname} (${host})`);
+                        tuple.callback(tuple.ctrl, { "state": "offline" });
+                    }
                 }
-            } else util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for ${ctrl.fullname} (${host})`);
+            } else util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for (${host})`);
         });
         return false;
     }
