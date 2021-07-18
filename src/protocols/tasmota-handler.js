@@ -3,15 +3,15 @@ const util = require('hcutils');
 // const HouseModel = require("housemodel");
 
 class TasmotaHandler {
-    constructor(config) {
+    constructor() {
         this.pollInterval = 5000;
-        this.controlmap = {};
+        this.ctrlmap = {};
     }
 
     relayCmd(ctrl, key, value) {
         let cmdstr = '';
         if(key === 'value' || key === 'state') {
-            util.logMessage("INFO", `TasmotaHandler::relayCmd(): Turning ${(value === "1")?"on":"off"} $ctrl.fullname}`);
+            util.logMessage("INFO", `TasmotaHandler::relayCmd(): Turning ${(value === "1")?"on":"off"} ${ctrl.fullname}`);
             // cmdstr = '/cm?cmnd=POWER0%20' + value;
             cmdstr = ctrl.channel ? `/cm?cmnd=POWER${ctrl.channel}%20${value}` : `/cm?cmnd=POWER0%20${value}`;
         } else if(key === 'color') {
@@ -38,24 +38,27 @@ class TasmotaHandler {
     registerControl(ctrl, callback) {
         const host = ctrl.host;
         if(!host) return;
-        if(ctrlmap[host]) {
-            ctrlmap[host].push({ ctrl: ctrl, callback: callback });
+        if(this.ctrlmap[host]) {
+
+            this.ctrlmap[host].push({ ctrl: ctrl, callback: callback });
+            util.logMessage("INFO", `TasmotaHandler::registerControl(): ${ctrl.fullname} added to ${ctrl.host}`);
         } else {
-            ctrlmap[host] = [ { ctrl: ctrl, callback: callback } ];
-            setInterval(this._loadState, this.pollInterval, host);
+            this.ctrlmap[host] = [];
+            this.ctrlmap[host].push({ ctrl: ctrl, callback: callback });
+            util.logMessage("INFO", `TasmotaHandler::registerControl(): ${ctrl.fullname} set for ${ctrl.host}`);
+            setInterval(this._loadState, this.pollInterval, this.ctrlmap, host);
         }
     }
 
-    _loadState(host) {
+    _loadState(ctrlmap, host) {
         util.doRemoteCmd(host, 80, '/cm?cmnd=Status%2011').then((data) => {
             try {
                 const info = JSON.parse(data);
-                for(let tuple in ctrlmap[host]) {
+                ctrlmap[host].forEach((tuple) => {
                     const statemap = {};
                     const channel = tuple.ctrl.channel;
                     const state = channel ? info.StatusSTS[`POWER${channel}`] : info.StatusSTS.POWER;
-                    if (!state) continue;
-                    statemap["state"] = state.toLowerCase();
+                    if (state) statemap["state"] = state.toLowerCase();
                     let ctrltype = tuple.ctrl.subtype;
                     if(!ctrltype && tuple.ctrl.type === "SMARTLIGHT") ctrltype = "RGBWW";
                     switch(ctrltype) {
@@ -73,19 +76,19 @@ class TasmotaHandler {
                             break;
                     }
                     tuple.callback(tuple.ctrl, statemap);
-                }
+                });
             } catch(e) {
                 util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for (${host})`);
             }
         }, (e) => { 
             if(e.code === 'EHOSTUNREACH') {
                 // host offline.
-                for(let tuple in ctrlmap[host]) {
+                ctrlmap[host].forEach((tuple) => {
                     if(tuple.ctrl.state !== "offline") {
                         util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for ${tuple.ctrl.fullname} (${host})`);
                         tuple.callback(tuple.ctrl, { "state": "offline" });
                     }
-                }
+                });
             } else util.logMessage("WARN", `TasmotaHandler::loadState: ${e.message} for (${host})`);
         });
         return false;
