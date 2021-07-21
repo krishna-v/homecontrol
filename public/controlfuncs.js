@@ -1,7 +1,8 @@
 window.onload = loadURL("/model.json", loadUI);
 
 const popupmap = {
-	"smartlight": openSmartLightPopup
+	"smartlight": openRGBWWPopup,
+	"dimmer": openDimmerPopup
 };
 
 function loadURL(url, callback) {
@@ -66,6 +67,7 @@ function createroom(room_id, rinfo) {
 		btn.id = "ctrl_" + room_id + "_" + ctrl_id;
 		btn.setAttribute("name", btn.id);
 		btn.setAttribute("class", ctrl.type.toLowerCase());
+		if(ctrl.subtype !== undefined) btn.setAttribute("subtype", ctrl.subtype.toLowerCase());
 		btn.setAttribute("state", "offline");
 		btn.onclick = function() { flip_state(this); };
 		btn.innerHTML = ctrl.name;
@@ -100,42 +102,18 @@ function showUI(name) {
 
 var reload = setInterval(loadURL, 10000, "/dynamic/fullmap.json", refreshState);
 
-function set_state(ctrl, value) {
+function setCtrlState(ctrl, key, value) {
 	const name = ctrl.getAttribute("name");
 	const realctrl = document.getElementById(name);
-	const query="/dynamic/ctrl/" + name + "?value=" + value;
-	console.log("flip_state: query = " + query);
+	const query=`/dynamic/ctrl/${name}?${key}=${value}`;
 	const xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4) {
 			if(this.status == 200 || this.status == 204) {
 				realctrl.setAttribute("pending", "true");
 				realctrl.setAttribute("pendcount", 0);
-				const state = value == 1 ? "on" : "off";
-				realctrl.setAttribute("state", state);
-				update_dups(realctrl);
-			}
-			else if (this.status == 404) {
-				console.log(responseText);
-			}
-		}
-	};
-	xhttp.open("GET", query, true);
-	xhttp.send();
-}
-
-function set_color(ctrl, color) {
-	const name = ctrl.getAttribute("name");
-	const realctrl = document.getElementById(name);
-	const query="/dynamic/ctrl/" + name + "?color=" + color;
-	const xhttp = new XMLHttpRequest();
-	xhttp.onreadystatechange = function() {
-		if(this.readyState == 4) {
-			if(this.status == 200 || this.status == 204) {
-				const state = "on";
-				realctrl.setAttribute("pending", "true");
-				realctrl.setAttribute("pendcount", 0);
-				realctrl.setAttribute("state", state);
+				if(key == "value") realctrl.setAttribute("state", value);
+				else realctrl.setAttribute("state", "on");
 				update_dups(realctrl);
 			}
 			else if (this.status == 404) {
@@ -148,8 +126,8 @@ function set_color(ctrl, color) {
 }
 
 function flip_state(ctrl) {
-	const newval = ctrl.getAttribute('state') == "on" ? 0 : 1;
-	set_state(ctrl, newval);
+	const newval = ctrl.getAttribute('state') == "on" ? "off" : "on";
+	setCtrlState(ctrl, "value", newval);
 }
 
 function refreshState(data) {
@@ -159,14 +137,14 @@ function refreshState(data) {
 			const state = data.rooms[room_id].ctrls[ctrl_id].state;
 			if(state === undefined || state == null) continue;
 			const color = data.rooms[room_id].ctrls[ctrl_id].color;
+			const level = data.rooms[room_id].ctrls[ctrl_id].level;
 			let lastchanged = data.rooms[room_id].ctrls[ctrl_id].lastChanged;
 			const node = document.getElementById("ctrl_" + room_id + "_" + ctrl_id);
 			if(node) {
 				let needs_update = false;
 				const nodestate = node.getAttribute("state");
-				if(color !== null) {
-					node.setAttribute("lightcolor", color);
-				}
+				if(color !== null) node.setAttribute("lightcolor", color);
+				if(level !== null) node.setAttribute("level", level);
 				if(state !== nodestate) {
 					const pending = node.getAttribute("pending");
 					const pendcount = node.getAttribute("pendcount");
@@ -221,51 +199,51 @@ function update_dups(node) {
 
 /* ----------------- Popup Stuff -------------------------------*/
 
-function buildSmartlightTopBox() {
-	const topbox = document.createElement("div");
-	topbox.id = "top-ctrls";	
-	topbox.setAttribute("class", "smartlight-topbox");
+function openPopup(ctrl) {
+	const name = ctrl.getAttribute("name");
+	const realctrl = document.getElementById(name);
+	const subtype = realctrl.getAttribute("subtype");
+	const ctrltype = (subtype === undefined || subtype === null) ? realctrl.getAttribute("class") : subtype;
+	console.log(`Getting popup func for type ${ctrltype}`);
+	let popupFunc = popupmap[ctrltype];
+	if(popupFunc === undefined || popupFunc == null) popupFunc = openInfoPopup;
+	document.getElementById("popup-title").innerHTML = realctrl.innerHTML;
+	const content = document.getElementById("popupcontent");
+	while(content.firstChild) { content.removeChild(content.firstChild); }
+	popupFunc(realctrl);
 
-	const lightmode = document.createElement("div");
-	lightmode.id = "lightmode";
-	lightmode.setAttribute("class", "popup-label");
-	lightmode.innerHTML = "Light Mode:";
-	topbox.appendChild(lightmode);
-
-	const switchwrap = document.createElement("div");
-	switchwrap.id = "switchwrap";
-	switchwrap.setAttribute("class", "flexwrap");
-
-	const switchlabel = document.createElement("label");
-	switchlabel.id = "top-switchlabel";
-	switchlabel.setAttribute("class", "switch");
-
-	const modetoggle = document.createElement("input");
-	modetoggle.id = "modeToggle";
-	modetoggle.setAttribute("type", "checkbox");
-	modetoggle.onclick = function() { togglemode(this); };
-	switchlabel.appendChild(modetoggle);
-
-	const opmodediv = document.createElement("div");
-	opmodediv.id = "opmode";
-	opmodediv.setAttribute("class", "toggle opmode");
-	switchlabel.appendChild(opmodediv);
-	switchwrap.appendChild(switchlabel);
-	topbox.appendChild(switchwrap);
-
-	const applywrap = document.createElement("div");
-	applywrap.id = "applywrap";
-	applywrap.setAttribute("class", "flexwrap");
-
-	const applybutton = document.createElement("button");
-	applybutton.id = "apply";
-	applybutton.onclick = function() { execPopup(); };
-	applybutton.innerHTML = "Apply!";
-	applywrap.appendChild(applybutton);
-	topbox.appendChild(applywrap);
-
-	return topbox;
+	const popup = document.getElementById("ctrl-popup");
+	popup.setAttribute("ctrl_id", ctrl.id);
+	popup.setAttribute("state", "active");
+	event.preventDefault();
+	return false;
 }
+
+function closePopup() {
+	document.getElementById("ctrl-popup").setAttribute("state", "hidden");
+}
+
+// Standard InfoBox (used in all popups.)
+function buildInfoBox(ctrl) {
+	const infobox = document.createElement("div");
+	infobox.id = "popup-infobox";
+	infobox.setAttribute("class", "popup-infobox");
+	const changets = ctrl.getAttribute("lastchanged");
+	let lastchanged = "unknown";
+	if(changets !== undefined || changets != null) {
+		console.log("Lastchanged: " + changets);
+		try {
+			lastchanged = new Date(Number(changets)).toLocaleString('sv', { timeZone: 'Asia/Kolkata' });
+			if(lastchanged.toString() === "Invalid Date") throw new RangeError("Invalid Date");
+		} catch(e) {
+			lastchanged = "{ " + new Date(Number(changets)).toLocaleString( 'sv', { timeZoneName: 'short' } ).replace(/ GMT.*/, "") + " }";
+		}
+	}
+	infobox.innerHTML = ctrl.getAttribute("state").toUpperCase() + " since " + lastchanged;
+	return infobox;
+}
+
+// Slider Stuff
 
 function sliderChanged(slider) {
 	const val = slider.parentElement.parentElement.querySelector(".slider-value");
@@ -310,28 +288,99 @@ function buildSlider(name, label, min, max, start) {
 	return sliderbox;
 }
 
-function buildInfoBox(ctrl) {
-	const infobox = document.createElement("div");
-	infobox.id = "popup-infobox";
-	infobox.setAttribute("class", "popup-infobox");
-	const changets = ctrl.getAttribute("lastchanged");
-	let lastchanged = "unknown";
-	if(changets !== undefined || changets != null) {
-		console.log("Lastchanged: " + changets);
-		try {
-			lastchanged = new Date(Number(changets)).toLocaleString('sv', { timeZone: 'Asia/Kolkata' });
-			if(lastchanged.toString() === "Invalid Date") throw new RangeError("Invalid Date");
-		} catch(e) {
-			lastchanged = "{ " + new Date(Number(changets)).toLocaleString( 'sv', { timeZoneName: 'short' } ).replace(/ GMT.*/, "") + " }";
-		}
-	}
-	infobox.innerHTML = ctrl.getAttribute("state").toUpperCase() + " since " + lastchanged;
-	return infobox;
+// InfoBox Popup (default popup)
+
+function openInfoPopup(ctrl) {
+	console.log("openInfoPopup called");
+	const content = document.getElementById("popupcontent");
+	content.appendChild(buildInfoBox(ctrl));
 }
 
-function buildSmartLightPopup(ctrl) {
+
+function buildTopBox(minimal, popupType) {
+	const topbox = document.createElement("div");
+	topbox.id = "top-ctrls";	
+	topbox.setAttribute("class", "popup-topbox");
+
+	const lightmode = document.createElement("div");
+	lightmode.id = "lightmode";
+	lightmode.setAttribute("class", "popup-label popup-element");
+	if(!minimal) lightmode.innerHTML = "Light Mode:";
+	topbox.appendChild(lightmode);
+
+	const switchwrap = document.createElement("div");
+	switchwrap.id = "switchwrap";
+	switchwrap.setAttribute("class", "flexwrap popup-element");
+
+	const switchlabel = document.createElement("label");
+	switchlabel.id = "top-switchlabel";
+	switchlabel.setAttribute("class", "switch");
+
+	if(!minimal) {
+		const modetoggle = document.createElement("input");
+		modetoggle.id = "modeToggle";
+		modetoggle.setAttribute("type", "checkbox");
+		modetoggle.onclick = function() { toggleMode(this); };
+		switchlabel.appendChild(modetoggle);
+
+		const opmodediv = document.createElement("div");
+		opmodediv.id = "opmode";
+		opmodediv.setAttribute("class", "toggle opmode");
+		switchlabel.appendChild(opmodediv);
+	}
+	switchwrap.appendChild(switchlabel);
+	topbox.appendChild(switchwrap);
+
+	const applywrap = document.createElement("div");
+	applywrap.id = "applywrap";
+	applywrap.setAttribute("class", "flexwrap");
+
+	const applybutton = document.createElement("button");
+	applybutton.id = "apply";
+	applybutton.onclick = function() { execPopup(popupType); };
+	applybutton.innerHTML = "Apply!";
+	applywrap.appendChild(applybutton);
+	topbox.appendChild(applywrap);
+
+	return topbox;
+}
+
+function execPopup(type) {
+	if(type === "dimmer") {
+		execDimmerPopup();
+	} else if (type === "rgbww") {
+		execRGBWWPopup();
+	} else {
+		console.log(`execPopup(): Unknown type ${type}`);
+	}
+}
+
+function openDimmerPopup(ctrl) {
 	const content = document.getElementById("popupcontent");
-	content.appendChild(buildSmartlightTopBox());
+	content.appendChild(buildTopBox(true, "dimmer"));
+	const label = (ctrl.getAttribute("class") === "fan") ? "Level" : "Brightness";
+	const level = ctrl.getAttribute("level");
+	const slider = buildSlider("lum", `${label} :`, 1, 100, level === undefined ? 50 : level);
+	content.append(slider, buildInfoBox(ctrl));
+	slider.setAttribute("state", "active");
+	const l = document.getElementById("lum-range");
+	l.value = level;
+	sliderChanged(l);
+}
+
+function execDimmerPopup() {
+	const value = document.getElementById("lum-range").value;
+	console.log("Setting ctrl level to " + value);
+	const ctrl_id = document.getElementById("ctrl-popup").getAttribute("ctrl_id");
+	const ctrl = document.getElementById(ctrl_id);
+	setCtrlState(ctrl, "level", value);
+}
+
+// RGBWW Popup
+
+function buildRGBWWPopup(ctrl) {
+	const content = document.getElementById("popupcontent");
+	content.appendChild(buildTopBox(false, "rgbww"));
 	content.appendChild(buildSlider("ctemp", "White/Yellow :", 0, 100, 100));
 	content.appendChild(buildSlider("lum", "Brightness :", 0, 255, 128));
 	content.appendChild(buildSlider("red", "Red :", 0, 255, 175));
@@ -340,34 +389,8 @@ function buildSmartLightPopup(ctrl) {
 	content.appendChild(buildInfoBox(ctrl));
 }
 
-function openPopup(ctrl) {
-	const name = ctrl.getAttribute("name");
-	const realctrl = document.getElementById(name);
-	
-	const ctrltype = realctrl.getAttribute("class");
-	console.log("Getting popup func for type " + ctrltype);
-	let popupFunc = popupmap[realctrl.getAttribute("class")];
-	if(popupFunc === undefined || popupFunc == null) popupFunc = openInfoPopup;
-	document.getElementById("popup-title").innerHTML = realctrl.innerHTML;
-	const content = document.getElementById("popupcontent");
-	while(content.firstChild) { content.removeChild(content.firstChild); }
-	popupFunc(realctrl);
-
-	const popup = document.getElementById("ctrl-popup");
-	popup.setAttribute("ctrl_id", ctrl.id);
-	popup.setAttribute("state", "active");
-	event.preventDefault();
-	return false;
-}
-
-function openInfoPopup(ctrl) {
-	console.log("openInfoPopup called");
-	const content = document.getElementById("popupcontent");
-	content.appendChild(buildInfoBox(ctrl));
-}
-
-function openSmartLightPopup(ctrl) {
-	buildSmartLightPopup(ctrl);
+function openRGBWWPopup(ctrl) {
+	buildRGBWWPopup(ctrl);
 	let color = ctrl.getAttribute("lightcolor");
 	console.log("Lamp color is " + color);
 	if(color !== undefined && color != null) {
@@ -399,15 +422,11 @@ function openSmartLightPopup(ctrl) {
 		let t = document.getElementById("ctemp-range");
 		t.value = temp;
 		sliderChanged(t);
-		togglemode(modetoggle);
+		toggleMode(modetoggle);
 	}
-};
+}
 
-function closePopup() {
-	document.getElementById("ctrl-popup").setAttribute("state", "hidden");
-};
-
-function togglemode(cb) {
+function toggleMode(cb) {
 	if(cb.checked) {
 		document.getElementById("ctemp-box").setAttribute("state", "active");
 		document.getElementById("lum-box").setAttribute("state", "active");
@@ -421,9 +440,9 @@ function togglemode(cb) {
 		document.getElementById("green-box").setAttribute("state", "active");
 		document.getElementById("blue-box").setAttribute("state", "active");
 	}
-};
+}
 
-function execPopup() {
+function execRGBWWPopup() {
 	let r = 0, g = 0, b = 0, cw = 0, ww = 0, hexcolor="";
 	if(document.getElementById("modeToggle").checked) {
 		const temp = document.getElementById("ctemp-range").value;
@@ -444,5 +463,5 @@ function execPopup() {
 	console.log("Setting smart bulb color to " + hexcolor);
 	const ctrl_id = document.getElementById("ctrl-popup").getAttribute("ctrl_id");
 	const ctrl = document.getElementById(ctrl_id);
-	set_color(ctrl, hexcolor);
+	setCtrlState(ctrl, "color", hexcolor);
 }
