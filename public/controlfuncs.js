@@ -106,13 +106,14 @@ function setCtrlState(ctrl, key, value) {
 	const name = ctrl.getAttribute("name");
 	const realctrl = document.getElementById(name);
 	const query=`/dynamic/ctrl/${name}?${key}=${value}`;
+	console.log(`setCtrlState: ${query}`)
 	const xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4) {
 			if(this.status == 200 || this.status == 204) {
 				realctrl.setAttribute("pending", "true");
 				realctrl.setAttribute("pendcount", 0);
-				if(key == "value") realctrl.setAttribute("state", value);
+				if(key == "value") realctrl.setAttribute("state", (value === 1) ? "on" : "off");
 				else realctrl.setAttribute("state", "on");
 				update_dups(realctrl);
 			}
@@ -126,7 +127,7 @@ function setCtrlState(ctrl, key, value) {
 }
 
 function flip_state(ctrl) {
-	const newval = ctrl.getAttribute('state') == "on" ? "off" : "on";
+	const newval = ctrl.getAttribute('state') === "on" ? 0 : 1;
 	setCtrlState(ctrl, "value", newval);
 }
 
