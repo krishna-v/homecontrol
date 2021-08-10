@@ -18,6 +18,8 @@ class HouseModel {
                     ctrl.id = ctrl_id;
                     ctrl.room_id = room_id;
                     ctrl.fullname = `${room.name} ${ctrl.name}`;
+                    if(ctrl.type === "SMARTLIGHT" && ctrl.subtype === undefined)
+                        ctrl.subtype = "RGBWW";
                 }
             }
         } catch(e) {

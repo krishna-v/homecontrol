@@ -42,6 +42,7 @@ button[state="off"] { color: white; background-color: gray; pointer-events: auto
 button[state="offline"] { color: dimgray; background-color: gray; pointer-events: none; }
 button[pending="true"] { opacity: 0.8; }
 .light[state="on"] { background-color: yellow; }
+.appliance[state="on"] { background-color: blue; }
 .fan[state="on"] { background-color: cyan; }
 .geyser[state="on"] { background-color: fuchsia; }
 .geyser[state="on"][ontime="long"] { background-color: red; }

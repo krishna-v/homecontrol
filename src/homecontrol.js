@@ -94,22 +94,23 @@ function hueSetup(hbe, huemap) {
     for(let room_id in model.rooms) {
         for(let ctrl_id in model.room(room_id).ctrls) {
             const ctrl = model.control(room_id, ctrl_id);
-            const type = ctrl.type;
-            if (!["LIGHT", "FAN", "GEYSER", "SMARTLIGHT"].includes(type)) continue;
+            if (!["LIGHT", "FAN", "GEYSER", "SMARTLIGHT", "APPLIANCE"].includes(ctrl.type)) continue;
             const lightspec = {};
             lightspec.name = ctrl.fullname;
             if(ctrl.model) lightspec.model = ctrl.model;
-            else switch(type) {
-                case "SMARTLIGHT":
-                    lightspec.model = "LCT016";
-                    break;
-                case "LIGHT":
-                    lightspec.model = "HBL001";
-                    break;
-                default:
-                    lightspec.model = "LOM001";
-                    break;
-            }
+			else {
+				lightspec.model = "LOM001";
+				if(ctrl.subtype === undefined) {
+					if(ctrl.type === "SMARTLIGHT") lightspec.model = "LCT016";
+					else if(ctrl.type === "LIGHT") lightspec.model = "HBL001";
+				} else if (ctrl.subtype === "RGBWW") lightspec.model = "LCT016";
+				else if (ctrl.subtype === "RGB") lightspec.model = "RGB001";
+				else if (ctrl.subtype === "COLORTEMP") lightspec.model = "LTW015";
+				else if (ctrl.subtype === "DIMMER") {
+					lightspec.model =
+						(ctrl.type === "SMARTLIGHT" || ctrl.type === "LIGHT") ? "LWB006" : "HDP001";
+				}
+			}
             lightspec.override = { uniqueid: `00:17:88:01:${room_id.padStart(2,'0')}:${ctrl_id.padStart(2,'0')}:01:01-0b` };
             lightspec.hueID = (room_id * 100) + (ctrl_id * 1);
             ctrl.hueid = hbe.addDevice(lightspec);
@@ -158,7 +159,8 @@ function hueCallback(hbe, id, light, state) {
     const powerstate = (state.on !== undefined) ? state.on : light.state.on;
     ctrlstate.state = (powerstate === true) ? "1" : "0";
     if(powerstate === true  && ctrl.type === "SMARTLIGHT" &&
-    	(state.ct !== undefined || state.hue != undefined || state.sat !== undefined || state.bri !== undefined)) {
+    	(state.ct !== undefined || state.hue !== undefined ||
+			state.sat !== undefined || state.bri !== undefined)) {
         let colormode = true;
         if(state.ct  !== undefined ||
             (state.hue === undefined && state.sat === undefined &&
@@ -169,7 +171,7 @@ function hueCallback(hbe, id, light, state) {
             light.state.colormode = "hs";
             const hue = (state.hue !== undefined) ? state.hue : light.state.hue;
             const sat = (state.sat !== undefined) ? state.sat : light.state.sat;
-            ctrlstate.hsb = [ Math.round(state.hue / 182), sat, bri ];
+            ctrlstate.hsb = [ Math.round(hue / 182), sat, bri ];
         } else {
             light.state.colormode = "ct";
             ctrlstate.ct = [ Math.round(bri * 100 / 254), (state.ct) ? state.ct : light.state.ct ];
